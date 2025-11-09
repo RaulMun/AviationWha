@@ -36,7 +36,7 @@ app.post('/login', async (req, res) => {
 
 // GET /me - protected route that fetches next flights for an airport from AviationStack
 // Query params: iata (required), type=arrivals|departures (optional, default=arrivals), limit (optional)
-app.get('/me', authenticateToken, async (req, res) => {
+app.get('/flights', authenticateToken, async (req, res) => {
   const iata = (req.query.iata || '').toUpperCase()
   const type = (req.query.type || 'arrivals').toLowerCase()
   const limit = 5
