@@ -1,40 +1,23 @@
 import express from 'express'
-import bcrypt from 'bcrypt'
-import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
-import { PrismaClient } from '@prisma/client'
 import { authenticateToken } from './middleware/auth.middleware.js'
+import { registerUser } from './lib/authService.js'
+import prisma from './lib/prisma.js'
 
 dotenv.config()
 
 const app = express()
 app.use(express.json())
 
-const prisma = new PrismaClient()
-const JWT_SECRET = process.env.JWT_SECRET
-
 // POST /register
 // body: { username, password }
 app.post('/register', async (req, res) => {
-  const { username, password } = req.body
-  if (!username || !password) {
-    return res.status(400).json({ message: 'Username and password are required' })
-  }
-
   try {
-    const existing = await prisma.user.findUnique({ where: { username } })
-    if (existing) return res.status(409).json({ message: 'Username already taken' })
-
-    const passwordHash = await bcrypt.hash(password, 10)
-    const user = await prisma.user.create({
-      data: { username, password: passwordHash }
-    })
-
-    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '1h' })
+    const { user, token } = await registerUser(req.body || {})
     return res.status(201).json({ message: 'User registered', token })
   } catch (err) {
     console.error('Register error:', err)
-    return res.status(500).json({ message: 'Internal server error' })
+    return res.status(err.status || 500).json({ message: err.message || 'Internal server error' })
   }
 })
 
